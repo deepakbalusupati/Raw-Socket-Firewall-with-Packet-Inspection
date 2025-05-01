@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firewall Control Panel</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Raw Socket Firewall Control Panel</h1>
+        
+        <div class="control-panel">
+            <h2>Firewall Controls</h2>
+            <div class="form-group">
+                <label for="interface">Network Interface:</label>
+                <input type="text" id="interface" value="eth0">
+            </div>
+            <div class="button-group">
+                <button id="start-btn">Start Firewall</button>
+                <button id="stop-btn">Stop Firewall</button>
+            </div>
+            <div id="status" class="status">Status: Not running</div>
+        </div>
+        
+        <div class="rules-panel">
+            <h2>Firewall Rules</h2>
+            <textarea id="rules" rows="10" cols="50"></textarea>
+            <button id="save-rules">Save Rules</button>
+        </div>
+        
+        <div class="log-panel">
+            <h2>Firewall Log</h2>
+            <div id="log" class="log-content"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load current rules
+            fetch('/api/firewall/rules')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('rules').value = data.rules.join('');
+                    }
+                });
+            
+            // Start firewall
+            document.getElementById('start-btn').addEventListener('click', function() {
+                const interface = document.getElementById('interface').value;
+                fetch('/api/firewall/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({interface: interface}),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status').textContent = 'Status: Running';
+                    addLog(data.message);
+                });
+            });
+            
+            // Stop firewall
+            document.getElementById('stop-btn').addEventListener('click', function() {
+                fetch('/api/firewall/stop', {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status').textContent = 'Status: Not running';
+                    addLog(data.message);
+                });
+            });
+            
+            // Save rules
+            document.getElementById('save-rules').addEventListener('click', function() {
+                const rules = document.getElementById('rules').value.split('\n');
+                fetch('/api/firewall/rules', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({rules: rules}),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    addLog(data.message);
+                });
+            });
+            
+            function addLog(message) {
+                const log = document.getElementById('log');
+                const entry = document.createElement('div');
+                entry.textContent = message;
+                log.prepend(entry);
+            }
+        });
+    </script>
+</body>
+</html>

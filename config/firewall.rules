@@ -1,0 +1,15 @@
+# Firewall rules configuration
+# Format: action protocol source destination port
+
+# Allow SSH
+allow tcp * * 22
+
+# Allow HTTP/HTTPS
+allow tcp * * 80
+allow tcp * * 443
+
+# Allow DNS
+allow udp * * 53
+
+# Default deny
+deny * * * *
