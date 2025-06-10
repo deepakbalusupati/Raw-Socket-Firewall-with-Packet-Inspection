@@ -49,7 +49,7 @@ sudo apt update && sudo apt install -y \
 ```bash
 # Clone the repository
 git clone https://github.com/deepakbalusupati/Raw-Socket-Firewall-with-Packet-Inspection.git
-cd raw-socket-firewall
+cd Raw-Socket-Firewall-with-Packet-Inspection
 
 # Build the firewall
 mkdir build && cd build
