@@ -2,9 +2,15 @@ from flask import Flask, render_template, request, jsonify
 import subprocess
 import os
 import json
+import sys
+import platform
 
 app = Flask(__name__)
-app.config['FIREWALL_PATH'] = os.path.join(os.path.dirname(__file__), '..', 'build', 'firewall')
+
+# Platform-specific configuration
+is_windows = platform.system() == 'Windows'
+firewall_executable = 'firewall.exe' if is_windows else 'firewall'
+app.config['FIREWALL_PATH'] = os.path.join(os.path.dirname(__file__), '..', 'build', firewall_executable)
 
 @app.route('/')
 def index():
@@ -23,8 +29,11 @@ def start_firewall():
 @app.route('/api/firewall/stop', methods=['POST'])
 def stop_firewall():
     try:
-        # This is a simplified version - in production you'd need proper process management
-        subprocess.run(['pkill', '-f', 'firewall'])
+        # Platform-specific process termination
+        if is_windows:
+            subprocess.run(['taskkill', '/F', '/IM', firewall_executable])
+        else:
+            subprocess.run(['pkill', '-f', 'firewall'])
         return jsonify({'status': 'success', 'message': 'Firewall stopped'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -49,6 +58,24 @@ def manage_rules():
             return jsonify({'status': 'success', 'message': 'Rules updated'})
         except Exception as e:
             return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/interfaces', methods=['GET'])
+def get_interfaces():
+    try:
+        interfaces = []
+        
+        # Platform-specific interface detection
+        if is_windows:
+            import psutil
+            for iface, addrs in psutil.net_if_addrs().items():
+                interfaces.append(iface)
+        else:
+            import netifaces
+            interfaces = netifaces.interfaces()
+            
+        return jsonify({'status': 'success', 'interfaces': interfaces})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

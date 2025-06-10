@@ -1,35 +1,26 @@
-![Screenshot](firewall.png)
+![Firewall Screenshot](firewall.png)
 
-# Raw Socket Firewall with Packet Inspection 🔥
+# Raw Socket Firewall with Packet Inspection
 
-![Linux](https://img.shields.io/badge/Linux-Ubuntu%2022.04-orange)
-![C++](https://img.shields.io/badge/C++-11/17-blue)
-![Python](https://img.shields.io/badge/Python-3.10+-yellow)
-![License](https://img.shields.io/badge/License-MIT-green)
+[![Linux](https://img.shields.io/badge/Linux-Compatible-green)](https://github.com/deepakbalusupati/Raw-Socket-Firewall-with-Packet-Inspection.git)
+[![Windows](https://img.shields.io/badge/Windows-Compatible-blue)](https://github.com/deepakbalusupati/Raw-Socket-Firewall-with-Packet-Inspection.git)
+[![C++](https://img.shields.io/badge/C++-17-blue)](https://github.com/deepakbalusupati/Raw-Socket-Firewall-with-Packet-Inspection.git)
+[![Python](https://img.shields.io/badge/Python-3.6+-yellow)](https://github.com/deepakbalusupati/Raw-Socket-Firewall-with-Packet-Inspection.git)
 
-## Table of Contents 📋
-1. [Features](#features-)
-2. [Prerequisites](#prerequisites-)
-3. [Installation](#installation-)
-4. [Configuration](#configuration-)
-5. [Usage](#usage-)
-6. [Web Interface](#web-interface-)
-7. [Testing](#testing-)
-8. [Project Structure](#project-structure-)
-9. [Troubleshooting](#troubleshooting-)
-10. [Contributing](#contributing-)
-11. [License](#license-)
+A cross-platform network firewall that operates at the raw socket level, providing packet filtering and basic deep packet inspection capabilities. Features a web-based control panel for real-time monitoring and rule management.
 
-## Features ✨
-- **Layer 3/4 Packet Filtering** (TCP/UDP/ICMP)
-- **Deep Packet Inspection** (HTTP payload analysis)
-- **Web-Based Control Panel** (Flask/Python)
-- **Real-Time Traffic Monitoring**
-- **Custom Rule Engine**
-- **Attack Protection** (SQLi, XSS, Port Scans)
+## Features
 
-## Prerequisites 📦
-### Ubuntu/Debian (22.04)
+- **Layer 3/4 Packet Filtering** - Filter TCP, UDP, and ICMP traffic
+- **Web-Based Control Panel** - Flask-based interface for monitoring and configuration
+- **Custom Rule Engine** - Define allow/deny rules based on protocol, source, destination, and port
+- **Cross-Platform Compatibility** - Works on both Linux and Windows systems
+- **Deep Packet Inspection** - Basic DPI for HTTP payload analysis to detect attack patterns
+
+## Prerequisites
+
+### Linux
+
 ```bash
 sudo apt update && sudo apt install -y \
     build-essential \
@@ -37,169 +28,174 @@ sudo apt update && sudo apt install -y \
     libpcap-dev \
     python3 \
     python3-pip \
-    git \
-    libmicrohttpd-dev
+    python3-netifaces
+```
 
-Installation ⚙️
-1. Clone and Build
-bash
-git clone https://github.com/yourusername/Raw-Socket-Firewall.git
-cd Raw-Socket-Firewall
+### Windows
+
+- Install [Visual Studio](https://visualstudio.microsoft.com/) with C++ development tools
+- Install [CMake](https://cmake.org/download/)
+- Install [Npcap SDK](https://nmap.org/npcap/dist/npcap-sdk-1.12.zip) for packet capture
+- Install [Python 3.6+](https://www.python.org/downloads/)
+- Install Python dependencies:
+  ```bash
+  pip install flask psutil
+  ```
+
+## Installation
+
+### Linux
+
+```bash
+# Clone the repository
+git clone https://github.com/deepakbalusupati/Raw-Socket-Firewall-with-Packet-Inspection.git
+cd raw-socket-firewall
+
+# Build the firewall
 mkdir build && cd build
-cmake .. && make
-sudo make install
-2. Verify Installation
-bash
-firewall --version
-# Expected output: "Raw Socket Firewall v1.0"
-Configuration ⚙️
-Rule Files
-Main Rules (config/firewall.rules):
+cmake ..
+make
 
-plaintext
-# Format: action protocol source destination port
-allow tcp * * 22      # Allow SSH
+# Run the firewall (requires root privileges)
+sudo ./firewall
+```
+
+### Windows
+
+```bash
+# Clone the repository
+git clone https://github.com/deepakbalusupati/Raw-Socket-Firewall-with-Packet-Inspection.git
+cd raw-socket-firewall
+
+# Build the firewall
+mkdir build && cd build
+cmake ..
+cmake --build . --config Release
+
+# Run the firewall (requires Administrator privileges)
+.\Release\firewall.exe
+```
+
+## Configuration
+
+### Firewall Rules
+
+The firewall rules are stored in `config/firewall.rules`. Each rule has the following format:
+
+```
+action protocol source destination port
+```
+
+Where:
+
+- **action**: `allow` or `deny`
+- **protocol**: `tcp`, `udp`, or `*` (any)
+- **source**: Source IP address or `*` (any)
+- **destination**: Destination IP address or `*` (any)
+- **port**: Port number or `0` (any)
+
+Example rules:
+
+```
+allow tcp * * 80      # Allow HTTP
+allow tcp * * 443     # Allow HTTPS
+allow udp * * 53      # Allow DNS
 deny udp * * 123      # Block NTP
-allow tcp * * 80       # HTTP
-allow tcp * * 443      # HTTPS
-deny * * * *           # Default deny
-Blacklist (config/blacklist.txt):
+deny * * * *          # Default deny all other traffic
+```
 
-plaintext
-10.0.0.5
-192.168.1.100
-Whitelist (config/whitelist.txt):
+### IP Blacklist and Whitelist
 
-plaintext
-192.168.1.1
-Usage 🚀
-Command Line
-bash
-# Start with auto-detected interface
+- **Blacklist**: Add IP addresses to block in `config/blacklist.txt`
+- **Whitelist**: Add trusted IP addresses in `config/whitelist.txt`
+
+Each file should contain one IP address per line.
+
+## Usage
+
+### Command Line
+
+```bash
+# Show help
+firewall --help
+
+# List available network interfaces
+firewall --list-interfaces
+
+# Start firewall with auto-detected interface
 sudo firewall
 
-# Specify interface
-sudo firewall eth0
+# Start firewall with specific interface
+sudo firewall eth0  # Linux
+sudo firewall "Ethernet"  # Windows
+```
 
-# List available interfaces
-firewall --list-interfaces
-Systemd Service (Production)
-ini
-# Create /etc/systemd/system/firewall.service
-[Unit]
-Description=Raw Socket Firewall
-After=network.target
+### Web Interface
 
-[Service]
-ExecStart=/usr/local/bin/firewall eth0
-Restart=always
-User=root
+The web interface provides a user-friendly way to control the firewall:
 
-[Install]
-WantedBy=multi-user.target
-Then:
+1. Start the web server:
 
-bash
-sudo systemctl enable firewall
-sudo systemctl start firewall
-Web Interface 🌐
-Launch
-bash
-cd web
-pip3 install flask
-python3 app.py
-Access at: http://localhost:5000
+   ```bash
+   cd web
+   python app.py
+   ```
 
-Interface Preview
-┌───────────────────────────────────────┐
-│ Raw Socket Firewall Control Panel     │
-├───────────────────────────────────────┤
-│ [✓] Firewall Status: RUNNING          │
-│ Network Interface: eth0               │
-├───────────────────────────────────────┤
-│ [Start] [Stop]                        │
-├───────────────────────────────────────┤
-│ Rules:                                │
-│ allow tcp * * 80                      │
-│ deny udp * * 123                      │
-└───────────────────────────────────────┘
-Testing 🧪
-1. Verify Allowed Traffic
-bash
-# HTTP (Port 80)
-curl -v http://example.com
+2. Access the interface at: http://localhost:5000
 
-# DNS (Port 53 UDP)
-nslookup example.com
-2. Test Blocking
-bash
-# Blacklisted IP
-ping 192.168.1.100
+From the web interface, you can:
 
-# Non-whitelisted port
-telnet google.com 4444
-3. Attack Simulation
-bash
-# SQL Injection (Blocked)
-curl "http://localhost/?param='OR 1=1--"
+- Start/stop the firewall
+- Select the network interface
+- View and edit firewall rules
+- Monitor blocked connections in real-time
 
-# XSS Attempt (Blocked)
-curl "http://localhost/?q=<script>alert(1)</script>"
+## Project Structure
 
-# Port Scan (Blocks suspicious probes)
-nmap -sS -T4 localhost
-Project Structure 📂
-Raw-Socket-Firewall/
-├── build/               # Compiled binaries
-├── config/              # Configuration
-│   ├── firewall.rules   # Rule definitions
-│   ├── blacklist.txt    # Blocked IPs
-│   └── whitelist.txt    # Trusted IPs
-├── src/                 # Source code
-│   ├── include/         # Headers
-│   └── impl/            # Implementation
-├── web/                 # Web UI
-│   ├── app.py           # Flask app
-│   ├── templates/       # HTML
-│   └── static/          # CSS/JS
-└── tests/               # Test cases
-Troubleshooting 🔧
-1. Interface Errors
-bash
-# List available interfaces
-ip -brief link show
-# Sample output:
-# lo      UNKNOWN    00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>
-# eth0    UP         aa:bb:cc:dd:ee:ff <BROADCAST,MULTICAST,UP,LOWER_UP>
-2. Permission Issues
-bash
-# Rebuild with correct permissions
-cd build && sudo cmake .. && sudo make
-3. Web Interface Fails
-bash
-# Check Flask installation
-pip3 show flask || pip3 install flask
-Contributing 🤝
-Fork the repository
+```
+raw-socket-firewall/
+├── build/                # Compiled binaries
+├── config/               # Configuration files
+│   ├── firewall.rules    # Main rule definitions
+│   ├── blacklist.txt     # Blocked IP addresses
+│   └── whitelist.txt     # Trusted IP addresses
+├── src/                  # Source code
+│   ├── include/          # Header files
+│   │   ├── firewall.h    # Firewall class definition
+│   │   └── platform.h    # Platform-specific code
+│   ├── impl/             # Implementation files
+│   │   ├── firewall.cpp  # Firewall implementation
+│   │   └── packet_inspector.cpp # DPI implementation
+│   └── main.cpp          # Entry point
+├── web/                  # Web interface
+│   ├── app.py            # Flask application
+│   ├── static/           # CSS and JavaScript
+│   └── templates/        # HTML templates
+└── CMakeLists.txt        # CMake build configuration
+```
 
-Create your feature branch:
+## Limitations
 
-bash
-git checkout -b feature/awesome-feature
-Commit changes:
+- The firewall operates in passive mode (monitoring only) and does not actively block packets
+- Requires administrator/root privileges to access raw sockets
+- Deep packet inspection is limited to basic pattern matching
+- Windows implementation requires Npcap or WinPcap installed
 
-bash
-git commit -m "Add awesome feature"
-Push to branch:
+## Troubleshooting
 
-bash
-git push origin feature/awesome-feature
-Open a Pull Request
+### Common Issues
 
-License 📄
-text
-MIT License
+#### Permission Denied
 
-Copyright (c) 2023 Your Name
+- Linux: Make sure you're running with `sudo` privileges
+- Windows: Run as Administrator
 
-Permission is hereby granted... (full license text)
+#### Interface Not Found
+
+- Use `firewall --list-interfaces` to see available interfaces
+- Verify the interface name is correct (case-sensitive on Windows)
+
+#### Build Failures on Windows
+
+- Ensure Npcap SDK is properly installed
+- Check that the SDK path is correctly specified in CMakeLists.txt

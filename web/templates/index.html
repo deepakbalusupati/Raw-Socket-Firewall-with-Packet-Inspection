@@ -14,7 +14,10 @@
             <h2>Firewall Controls</h2>
             <div class="form-group">
                 <label for="interface">Network Interface:</label>
-                <input type="text" id="interface" value="eth0">
+                <select id="interface">
+                    <option value="">Loading interfaces...</option>
+                </select>
+                <button id="refresh-interfaces">Refresh</button>
             </div>
             <div class="button-group">
                 <button id="start-btn">Start Firewall</button>
@@ -27,6 +30,8 @@
             <h2>Firewall Rules</h2>
             <textarea id="rules" rows="10" cols="50"></textarea>
             <button id="save-rules">Save Rules</button>
+            <p><small>Format: action protocol source destination port</small></p>
+            <p><small>Example: allow tcp * * 80</small></p>
         </div>
         
         <div class="log-panel">
@@ -37,6 +42,14 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Load available interfaces
+            loadInterfaces();
+            
+            // Refresh interfaces button
+            document.getElementById('refresh-interfaces').addEventListener('click', function() {
+                loadInterfaces();
+            });
+            
             // Load current rules
             fetch('/api/firewall/rules')
                 .then(response => response.json())
@@ -44,11 +57,19 @@
                     if (data.status === 'success') {
                         document.getElementById('rules').value = data.rules.join('');
                     }
+                })
+                .catch(error => {
+                    addLog('Error loading rules: ' + error);
                 });
             
             // Start firewall
             document.getElementById('start-btn').addEventListener('click', function() {
                 const interface = document.getElementById('interface').value;
+                if (!interface) {
+                    addLog('Error: Please select a network interface');
+                    return;
+                }
+                
                 fetch('/api/firewall/start', {
                     method: 'POST',
                     headers: {
@@ -60,6 +81,9 @@
                 .then(data => {
                     document.getElementById('status').textContent = 'Status: Running';
                     addLog(data.message);
+                })
+                .catch(error => {
+                    addLog('Error starting firewall: ' + error);
                 });
             });
             
@@ -72,6 +96,9 @@
                 .then(data => {
                     document.getElementById('status').textContent = 'Status: Not running';
                     addLog(data.message);
+                })
+                .catch(error => {
+                    addLog('Error stopping firewall: ' + error);
                 });
             });
             
@@ -88,13 +115,43 @@
                 .then(response => response.json())
                 .then(data => {
                     addLog(data.message);
+                })
+                .catch(error => {
+                    addLog('Error saving rules: ' + error);
                 });
             });
+            
+            function loadInterfaces() {
+                fetch('/api/interfaces')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const select = document.getElementById('interface');
+                            select.innerHTML = '';
+                            
+                            if (data.interfaces.length === 0) {
+                                const option = document.createElement('option');
+                                option.text = 'No interfaces found';
+                                select.add(option);
+                            } else {
+                                data.interfaces.forEach(iface => {
+                                    const option = document.createElement('option');
+                                    option.value = iface;
+                                    option.text = iface;
+                                    select.add(option);
+                                });
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        addLog('Error loading interfaces: ' + error);
+                    });
+            }
             
             function addLog(message) {
                 const log = document.getElementById('log');
                 const entry = document.createElement('div');
-                entry.textContent = message;
+                entry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
                 log.prepend(entry);
             }
         });
